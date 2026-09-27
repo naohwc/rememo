@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- v1.7：图标改为「图标新.png」的白底彩虹手绘图案（图案四周保留留白） -->
+    <color name="ic_launcher_background">#FFFFFF</color>
+</resources>
