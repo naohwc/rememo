@@ -374,11 +374,12 @@ private fun NavItem(
             .clip(shape)
             .background(
                 if (active) {
-                    // 半透明玻璃底：比导航栏底色深一点，能透出下方内容
+                    // v2.4.1：改为**不透明**纵向渐变。半透明底会让 gradientShadow 从
+                    // 胶囊内部透出，在图标与文字之间形成一条亮带（详见 AppColors 注释）。
                     Brush.verticalGradient(
                         listOf(
-                            AppColors.BarActiveGlass.copy(alpha = 0.62f),
-                            AppColors.BarActiveGlass.copy(alpha = 0.40f)
+                            AppColors.BarActiveTop,
+                            AppColors.BarActiveBottom
                         )
                     )
                 } else {

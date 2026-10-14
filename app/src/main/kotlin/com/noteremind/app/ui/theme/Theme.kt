@@ -53,8 +53,18 @@ object AppColors {
 
     /** 导航栏未选中图标文字 */
     val BarIdleInk = Color(0xFF2B2B2B)
-    /** 导航栏选中项：半透明玻璃底 */
-    val BarActiveGlass = Color(0xFFE3E5E8)
+    /**
+     * 导航栏选中胶囊实底（v2.4.1）——**必须不透明**。
+     *
+     * 原先是「#E3E5E8 + alpha 0.62/0.40」的半透明玻璃底。半透明会让胶囊自身的
+     * gradientShadow 从内部透出来，而该阴影在胶囊中部恰好有一块空洞 →
+     * 图标与文字之间透出一条 28dp×5dp 的直角亮带（实测色 #EFF0F2，与
+     * "渐变铺在未被打暗的导航栏底 #FBFBFC 上"的推算值 238.7 完全吻合）。
+     * 编辑页输入胶囊用同一个 gradientShadow、但底色不透明 #E5E5E5，就没有这条带子。
+     * 改用不透明双色渐变（上略深、下略浅，保留原本的微凸观感）后阴影不再透出，亮带消除。
+     */
+    val BarActiveTop = Color(0xFFDEE0E4)
+    val BarActiveBottom = Color(0xFFE5E7EA)
 
     // ---------- v1.5 弹层（弹出.png） ----------
     /** 弹出面板底色 #EFEFEF */
