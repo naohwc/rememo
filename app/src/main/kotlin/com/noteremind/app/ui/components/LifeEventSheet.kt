@@ -477,8 +477,8 @@ fun LifeEventSheet(
                                     .shadow(
                                         elevation = 4.dp,
                                         shape = CircleShape,
-                                        ambientColor = Color(0x33000000),
-                                        spotColor = Color(0x22000000)
+                                        ambientColor = DotShadowNear,
+                                        spotColor = DotShadowFar
                                     )
                                     .clip(CircleShape)
                                     .background(entry.color)
@@ -505,8 +505,8 @@ fun LifeEventSheet(
                                         .shadow(
                                             elevation = if (active) 8.dp else 3.dp,
                                             shape = CircleShape,
-                                            ambientColor = Color(0x33000000),
-                                            spotColor = Color(0x22000000)
+                                            ambientColor = DotShadowNear,
+                                            spotColor = DotShadowFar
                                         )
                                         .clip(CircleShape)
                                         .background(entry.color)

@@ -467,8 +467,8 @@ fun EditorSheet(
                                         .shadow(
                                             elevation = 4.dp,
                                             shape = CircleShape,
-                                            ambientColor = Color(0x33000000),
-                                            spotColor = Color(0x22000000)
+                                            ambientColor = DotShadowNear,
+                                            spotColor = DotShadowFar
                                         )
                                         .clip(CircleShape)
                                         .background(entry.color)
@@ -495,8 +495,8 @@ fun EditorSheet(
                                             .shadow(
                                                 elevation = if (active) 8.dp else 3.dp,
                                                 shape = CircleShape,
-                                                ambientColor = Color(0x33000000),
-                                                spotColor = Color(0x22000000)
+                                                ambientColor = DotShadowNear,
+                                                spotColor = DotShadowFar
                                             )
                                             .clip(CircleShape)
                                             .background(entry.color)
@@ -627,9 +627,11 @@ fun IconPickerSheet(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .shadow(
+                                .shadow(
                     elevation = 16.dp,
-                    shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+                    shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
+                    ambientColor = SheetShadowDeep,
+                    spotColor = SheetShadowDeep
                 )
                 .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
                 .background(AppColors.SheetBg)
