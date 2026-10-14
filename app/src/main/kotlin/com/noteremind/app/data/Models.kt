@@ -46,6 +46,8 @@ data class LifeEvent(
     val dateMillis: Long,
     /** 归属的 TrackOwner.id；空串表示「我」（用全局生日算年龄） */
     val ownerId: String = "",
+    /** v1.9：条目颜色 key，见 MorandiPalette（年龄/第几年徽标底色取此色） */
+    val color: String = "m1",
     val createdAt: Long = 0L
 )
 

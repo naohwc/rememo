@@ -291,8 +291,11 @@ private fun MenuAction(
  * 列表右侧的天数徽标（v1.7）：
  * 「已 [数字] 天」/「剩余 [数字] 天」整体**排在一行**，只有数字带底色，
  * 「已 / 剩余 / 天」这些字不加底色；底色取条目所选颜色，
- * 数字比 v1.6（24sp）略小，居中显示在约两行文字高的色块里；
+ * 数字居中显示在约两行文字高的色块里；
  * 数字按 numberChars 个字符预留固定宽度，因此各条目右侧文字位置完全对齐。
+ *
+ * v1.9：数字字号 17sp → 15sp（缩小一号），「别忘了」与「纪念日」共用本组件，
+ * 两处数字大小天然一致。
  */
 private val DIGIT_SLOT = 11.dp
 
@@ -309,7 +312,7 @@ fun DayBadge(
     unit: String = "天"
 ) {
     // 底色明的时候用深字，暗的时候用白字，保证数字始终可读
-    val onBadge = if (badgeColor.relativeLuminance() > 0.26f) AppColors.InkBrown else Color.White
+    val onBadge = readableInk(badgeColor)
 
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Text(
@@ -330,8 +333,8 @@ fun DayBadge(
         ) {
             Text(
                 number.toString(),
-                fontSize = 17.sp,
-                lineHeight = 19.sp,
+                fontSize = 15.sp,
+                lineHeight = 17.sp,
                 fontWeight = FontWeight.Bold,
                 color = onBadge,
                 textAlign = TextAlign.Center,
@@ -347,6 +350,10 @@ fun DayBadge(
         )
     }
 }
+
+/** 供徽标 / 标签挑选在给定底色上可读的文字颜色（亮底深字、暗底白字） */
+fun readableInk(bg: Color): Color =
+    if (bg.relativeLuminance() > 0.26f) AppColors.InkBrown else Color.White
 
 /** WCAG 相对亮度（0=黑, 1=白）：用来挑一个在给定底色上可读的文字颜色 */
 private fun Color.relativeLuminance(): Float {

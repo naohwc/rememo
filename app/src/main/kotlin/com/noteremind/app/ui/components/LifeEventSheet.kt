@@ -2,6 +2,7 @@ package com.noteremind.app.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
@@ -24,6 +27,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
@@ -59,16 +64,17 @@ private val ROW_V_PAD = 12.dp
 private val PillShape = RoundedCornerShape(percent = 50)
 
 /**
- * 人生轨迹输入（v1.6）：
+ * 人生轨迹输入（v1.9）：
  * - 整页灰面板 + 白胶囊按钮 + 前置矢量图标平铺行
  * - 文字 + 日期 + 归属（是谁的人生轨迹）；新建归属时可设类型与锚点日期
  * - 归属的「选择」与重复单位一样，改为胶囊按钮浮层展开
+ * - v1.9：新增「颜色」行，列表中「谁几岁 / 事项第几年」徽标底色取此处所选颜色
  */
 @Composable
 fun LifeEventSheet(
     initial: LifeEvent?,
     onDismiss: () -> Unit,
-    onSave: (String, Long, String) -> Unit
+    onSave: (String, Long, String, String) -> Unit
 ) {
     val today = LocalDate.now()
     val data by AppRepo.data.collectAsState()
@@ -88,6 +94,8 @@ fun LifeEventSheet(
     }
     // v1.8：正在修改生日/起始日的已有归属（null = 新建归属的锚点日期）
     var editingOwnerAnchor by remember { mutableStateOf<TrackOwner?>(null) }
+    // v1.9：条目颜色（列表年龄徽标底色）
+    var colorKey by remember { mutableStateOf(initial?.color ?: "m1") }
 
     val canSave = text.isNotBlank()
     val trimmedName = ownerName.trim()
@@ -143,7 +151,7 @@ fun LifeEventSheet(
                                 id
                             }
                         }
-                        onSave(text.trim(), millis, ownerId)
+                        onSave(text.trim(), millis, ownerId, colorKey)
                         close()
                     }
                 })
@@ -313,6 +321,49 @@ fun LifeEventSheet(
                                 calendarForAnchor = true
                                 showCalendar = true
                             })
+                        }
+                    }
+                }
+
+                // ⑤ 颜色（v1.9：与「别忘了 / 纪念日」一致；
+                //    列表中「谁几岁 / 事项第几年」徽标的底色即此处所选颜色）
+                RowGroup(showDivider = false) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = ROW_PAD, vertical = ROW_V_PAD),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SheetLeadingIcon(Icons.Filled.Palette)
+                            Text("颜色", fontSize = 16.sp, color = AppColors.InkBrown)
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                                .padding(start = ROW_PAD + ICON_COL, end = ROW_PAD, bottom = 6.dp)
+                        ) {
+                            MorandiPalette.all.forEach { entry ->
+                                val active = entry.key == colorKey
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 14.dp)
+                                        .size(34.dp)
+                                        .shadow(
+                                            elevation = if (active) 8.dp else 3.dp,
+                                            shape = CircleShape,
+                                            ambientColor = Color(0x33000000),
+                                            spotColor = Color(0x22000000)
+                                        )
+                                        .clip(CircleShape)
+                                        .background(entry.color)
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = remember { MutableInteractionSource() }
+                                        ) { colorKey = entry.key }
+                                )
+                            }
                         }
                     }
                 }

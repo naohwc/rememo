@@ -1,6 +1,7 @@
 package com.noteremind.app.ui.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,15 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.noteremind.app.ui.theme.AppColors
+
+/**
+ * v1.9 阴影色板（参考 xiaozhi-android-client 主页元素）：
+ * - 列表卡片：黑 4%、模糊 4、下移 2（ConversationTile 同款单层柔和投影）
+ * - 加号 FAB：黑 20%/下移 4 + 黑 10%/下移 10 的双层投影（xiaozhi FAB 同款）
+ */
+private val ListShadow = Color(0x0A000000)
+private val FabShadowNear = Color(0x33000000)
+private val FabShadowFar = Color(0x1A000000)
 
 /**
  * 外渐变阴影（v1.6）：
@@ -76,14 +86,39 @@ fun AppBackdrop(modifier: Modifier = Modifier) {
 }
 
 /**
- * 列表卡片（v1.6）：
- * 纯白卡片（列表22.png）+ 外渐变阴影（多层扩散，向内实、向外虚），
- * 浮在浅灰页面底色上。
+ * 列表卡片（v1.9）：
+ * 阴影改为 xiaozhi-android-client 主页列表项（ConversationTile）同款：
+ * 纯白卡片 + 1px 浅灰细边 + 单层柔和下投影（黑 4%、模糊 4、下移 2），
+ * 替换此前的多层重阴影；别忘了 / 纪念日 / 人生轨迹三个列表共用。
  */
 fun Modifier.creamCard(
     shape: Shape = RoundedCornerShape(20.dp),
-    elevation: Dp = 5.dp
+    elevation: Dp = 2.dp
 ): Modifier = this
-    .gradientShadow(shape = shape, base = elevation, layers = 3)
+    .shadow(
+        elevation = elevation,
+        shape = shape,
+        ambientColor = ListShadow,
+        spotColor = ListShadow,
+        clip = false
+    )
     .clip(shape)
     .background(AppColors.CardCream)
+    .border(1.dp, AppColors.CardGlow, shape)
+
+/** v1.9：加号 FAB 的双层柔和投影（xiaozhi FAB 同款：近层深、远层淡） */
+fun Modifier.fabShadow(shape: Shape): Modifier = this
+    .shadow(
+        elevation = 10.dp,
+        shape = shape,
+        ambientColor = FabShadowFar,
+        spotColor = FabShadowFar,
+        clip = false
+    )
+    .shadow(
+        elevation = 4.dp,
+        shape = shape,
+        ambientColor = FabShadowNear,
+        spotColor = FabShadowNear,
+        clip = false
+    )

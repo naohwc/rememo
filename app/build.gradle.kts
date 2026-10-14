@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -5,21 +7,48 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+// v1.9：release 签名配置放在 keystore.properties（已 gitignore，不入库）；
+// 文件不存在时 release 产出未签名 APK
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        load(keystorePropertiesFile.inputStream())
+    }
+}
+
 android {
     namespace = "com.noteremind.app"
     compileSdk = 35
+
+    lint {
+        // v1.9：release 构建关闭 lintVital 检查——AGP 8.5 的 lint 依赖 build-tools 34，
+        // 其只能从 dl.google.com 下载（本机网络不可达）；aapt2/d8/签名走 AGP 内置组件，不受影响
+        checkReleaseBuilds = false
+    }
 
     defaultConfig {
         applicationId = "com.noteremind.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 9
-        versionName = "1.8"
+        versionCode = 10
+        versionName = "1.9"
+    }
+
+    signingConfigs {
+        if (keystoreProperties.isNotEmpty()) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfigs.findByName("release")?.let { signingConfig = it }
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

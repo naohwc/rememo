@@ -60,6 +60,7 @@ import com.noteremind.app.ui.components.AppBackdrop
 import com.noteremind.app.ui.components.EditorResult
 import com.noteremind.app.ui.components.EditorSheet
 import com.noteremind.app.ui.components.LifeEventSheet
+import com.noteremind.app.ui.components.fabShadow
 import com.noteremind.app.ui.components.frostGlass
 import com.noteremind.app.ui.components.gradientShadow
 import com.noteremind.app.ui.screens.AnniversaryScreen
@@ -112,9 +113,9 @@ fun AppRoot() {
                 .padding(bottom = 10.dp)
         )
 
-        // 右下角毛玻璃加号
+        // 右下角加号（v1.9：黑底白图标）
         if (tab != TAB_SETTINGS) {
-            GlassFab(
+            BlackFab(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .navigationBarsPadding()
@@ -226,7 +227,7 @@ fun AppRoot() {
         LifeEventSheet(
             initial = src,
             onDismiss = { editorKind = -1; editingLife = null },
-            onSave = { text, millis, ownerId ->
+            onSave = { text, millis, ownerId, colorKey ->
                 if (src == null) {
                     AppRepo.addLifeEvent(
                         LifeEvent(
@@ -234,11 +235,14 @@ fun AppRoot() {
                             text = text,
                             dateMillis = millis,
                             ownerId = ownerId,
+                            color = colorKey,
                             createdAt = System.currentTimeMillis()
                         )
                     )
                 } else {
-                    AppRepo.updateLifeEvent(src.copy(text = text, dateMillis = millis, ownerId = ownerId))
+                    AppRepo.updateLifeEvent(
+                        src.copy(text = text, dateMillis = millis, ownerId = ownerId, color = colorKey)
+                    )
                 }
                 editorKind = -1
                 editingLife = null
@@ -410,12 +414,17 @@ private fun NavItem(
     }
 }
 
+/**
+ * 右下角加号键（v1.9：黑底白图标 + 双层柔和投影，参考 xiaozhi-android-client 的 FAB）
+ */
 @Composable
-private fun GlassFab(modifier: Modifier = Modifier, onClick: () -> Unit) {
+private fun BlackFab(modifier: Modifier = Modifier, onClick: () -> Unit) {
     Box(
         modifier = modifier
             .size(58.dp)
-            .frostGlass(shape = CircleShape, alpha = 0.88f, elevation = 16.dp)
+            .fabShadow(CircleShape)
+            .clip(CircleShape)
+            .background(AppColors.BarInk)
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -425,7 +434,7 @@ private fun GlassFab(modifier: Modifier = Modifier, onClick: () -> Unit) {
         Icon(
             Icons.Filled.Add,
             contentDescription = "添加",
-            tint = AppColors.TextPrimary,
+            tint = Color.White,
             modifier = Modifier.size(26.dp)
         )
     }

@@ -51,8 +51,10 @@ import androidx.compose.ui.unit.sp
 import com.noteremind.app.data.AppRepo
 import com.noteremind.app.data.LifeEvent
 import com.noteremind.app.ui.components.InlineActionMenu
+import com.noteremind.app.ui.components.MorandiPalette
 import com.noteremind.app.ui.components.creamCard
 import com.noteremind.app.ui.components.gradientShadow
+import com.noteremind.app.ui.components.readableInk
 import com.noteremind.app.ui.theme.AppColors
 import com.noteremind.app.util.DateUtils
 import java.time.LocalDate
@@ -95,19 +97,19 @@ fun LifeTrackScreen(onEdit: (LifeEvent) -> Unit) {
         }
     }
 
-    /** 年龄 / 第几年 标签 */
+    /** 年龄 / 第几年 标签（v1.9：带归属名——「我几岁 / 谁几岁 / 事项第几年」） */
     fun ageLabel(ownerId: String, date: LocalDate): String? {
         val owner = if (ownerId.isEmpty()) null else data.owners.find { it.id == ownerId }
         return when {
             owner == null && ownerId.isNotEmpty() -> null
             owner == null ->
-                data.birthdayMillis?.let { DateUtils.ageAt(it, date)?.let { a -> "${a}岁" } }
+                data.birthdayMillis?.let { DateUtils.ageAt(it, date)?.let { a -> "我${a}岁" } }
             owner.isPerson ->
-                DateUtils.ageAt(owner.anchorMillis, date)?.let { "${it}岁" }
+                DateUtils.ageAt(owner.anchorMillis, date)?.let { "${owner.name}${it}岁" }
             else -> {
                 val anchor = DateUtils.millisToDate(owner.anchorMillis)
                 val years = ChronoUnit.YEARS.between(anchor, date).toInt() + 1
-                "第${years}年"
+                "${owner.name}第${years}年"
             }
         }
     }
@@ -298,13 +300,21 @@ private fun TimelineItem(
                     )
                     if (age != null) {
                         Spacer(Modifier.width(8.dp))
+                        // v1.9：底色 = 输入框中所选颜色；文字按底色明暗自动切换深/白
+                        val chipColor = MorandiPalette.byKey(event.color)
                         Box(
                             modifier = Modifier
                                 .gradientShadow(RoundedCornerShape(8.dp), base = 2.dp, layers = 2)
-                                .background(AppColors.ChipCream, RoundedCornerShape(8.dp))
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(chipColor)
                                 .padding(horizontal = 7.dp, vertical = 2.dp)
                         ) {
-                            Text(age, fontSize = 11.sp, lineHeight = 13.sp, color = AppColors.ChipInk)
+                            Text(
+                                age,
+                                fontSize = 11.sp,
+                                lineHeight = 13.sp,
+                                color = readableInk(chipColor)
+                            )
                         }
                     }
                 }
