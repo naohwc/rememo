@@ -16,30 +16,31 @@ import androidx.compose.ui.unit.dp
 import com.noteremind.app.ui.theme.AppColors
 
 /**
- * v2.2 阴影色板（在 v2.1 基础上整体加深一档）：
- * - 列表卡片：三层纯黑白灰投影（近 54% / 中 38% / 远 24%），
- *   v2.0 为 20%/10%，v2.1 为 40%/26%/14%，v2.2 再加深约 35%~70%
- * - 加号 FAB：黑 25%/下移 4 + 黑 14%/下移 10 的双层投影
+ * v2.3 阴影色板（在 v2.2 基础上再加深一档）：
+ * - 列表卡片：三层纯黑白灰投影（近 69% / 中 54% / 远 36%），
+ *   演进：v2.0 20%/10% → v2.1 40%/26%/14% → v2.2 54%/38%/24% → v2.3 69%/54%/36%
+ * - 加号 FAB：黑 36%/下移 4 + 黑 20%/下移 10 的双层投影
  * - 卡片四周仍无浅色描边（v2.1 已移除 CardGlow），只靠投影拉开层次
  */
-private val ListShadowNear = Color(0x8A000000)
-private val ListShadowMid = Color(0x62000000)
-private val ListShadowFar = Color(0x3D000000)
-private val FabShadowNear = Color(0x40000000)
-private val FabShadowFar = Color(0x24000000)
+private val ListShadowNear = Color(0xB0000000)
+private val ListShadowMid = Color(0x8A000000)
+private val ListShadowFar = Color(0x5C000000)
+private val FabShadowNear = Color(0x5C000000)
+private val FabShadowFar = Color(0x33000000)
 
-/** 弹层 / 图标选择面板投影（v2.2：显式指定更深的纯黑投影） */
-val SheetShadowDeep = Color(0x66000000)
+/** 弹层 / 图标选择面板投影（v2.3：显式指定更深的纯黑投影） */
+val SheetShadowDeep = Color(0x80000000)
 
-/** 颜色圆点 / 小色块的投影（v2.2 加深） */
-val DotShadowNear = Color(0x40000000)
-val DotShadowFar = Color(0x2A000000)
+/** 颜色圆点 / 小色块的投影（v2.3 加深） */
+val DotShadowNear = Color(0x5C000000)
+val DotShadowFar = Color(0x3D000000)
 
 /**
  * 外渐变阴影（v1.6，v2.2 加深）：
  * 叠加多层「扩散半径递增 + 透明度递减」的阴影，模拟由内向外渐渐变淡的
  * 渐变光晕。minSdk 26 上无法使用 RenderEffect 模糊，用分层阴影是最稳的等效方案。
  * v2.2：起始透明度 0.22 → 0.30，逐层递减 0.06 → 0.07，整体更深。
+ * v2.3：起始 0.30 → 0.38，逐层递减 0.07 → 0.09。
  */
 fun Modifier.gradientShadow(
     shape: Shape,
@@ -50,12 +51,12 @@ fun Modifier.gradientShadow(
     var m: Modifier = this
     repeat(layers) { i ->
         val e = base * (1f + i * 1.5f)
-        val a = (0.30f - i * 0.07f).coerceAtLeast(0.08f)
+        val a = (0.38f - i * 0.09f).coerceAtLeast(0.12f)
         m = m.shadow(
             elevation = e,
             shape = shape,
             ambientColor = tint.copy(alpha = a),
-            spotColor = tint.copy(alpha = a * 0.85f),
+            spotColor = tint.copy(alpha = a * 0.9f),
             clip = false
         )
     }

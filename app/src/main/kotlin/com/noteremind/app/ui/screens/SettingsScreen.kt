@@ -197,7 +197,7 @@ fun SettingsScreen() {
             title = { Text("关于", fontSize = 17.sp, fontWeight = FontWeight.SemiBold) },
             text = {
                 Column {
-                    Text("提醒记事 v2.2", fontSize = 15.sp, color = AppColors.TextPrimary)
+                    Text("提醒记事 v2.3", fontSize = 15.sp, color = AppColors.TextPrimary)
                     Spacer(Modifier.height(8.dp))
                     Text(
                         "一个记录提醒、人生轨迹与纪念日的小工具。支持阴阳历日期、重复提醒、写入系统日历、条目备注与本地数据备份。备注不在列表显示，仅编辑时可见。",
