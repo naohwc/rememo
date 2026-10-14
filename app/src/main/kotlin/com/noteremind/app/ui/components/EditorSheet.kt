@@ -206,7 +206,8 @@ fun EditorSheet(
                                 .gradientShadow(PillShape, base = 3.dp, layers = 3)
                                 .clip(PillShape)
                                 .background(AppColors.SheetField)
-                                .padding(horizontal = ROW_PAD)
+                                .padding(horizontal = ROW_PAD),
+                            contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 SheetLeadingIcon(Icons.Filled.Edit)
@@ -467,7 +468,7 @@ fun EditorSheet(
                                         .shadow(
                                             elevation = 4.dp,
                                             shape = CircleShape,
-                                            ambientColor = DotShadowNear,
+                                            ambientColor = Color.Transparent,
                                             spotColor = DotShadowFar
                                         )
                                         .clip(CircleShape)
@@ -495,7 +496,7 @@ fun EditorSheet(
                                             .shadow(
                                                 elevation = if (active) 8.dp else 3.dp,
                                                 shape = CircleShape,
-                                                ambientColor = DotShadowNear,
+                                                ambientColor = Color.Transparent,
                                                 spotColor = DotShadowFar
                                             )
                                             .clip(CircleShape)
@@ -630,7 +631,7 @@ fun IconPickerSheet(
                                 .shadow(
                     elevation = 16.dp,
                     shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp),
-                    ambientColor = SheetShadowDeep,
+                    ambientColor = Color.Transparent,
                     spotColor = SheetShadowDeep
                 )
                 .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))

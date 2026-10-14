@@ -62,7 +62,7 @@ import com.noteremind.app.ui.components.EditorSheet
 import com.noteremind.app.ui.components.LifeEventSheet
 import com.noteremind.app.ui.components.fabShadow
 import com.noteremind.app.ui.components.barShadow
-import com.noteremind.app.ui.components.frostGlass
+import com.noteremind.app.ui.components.barSurface
 import com.noteremind.app.ui.components.gradientShadow
 import com.noteremind.app.ui.screens.AnniversaryScreen
 import com.noteremind.app.ui.screens.DontForgetScreen
@@ -298,7 +298,7 @@ private fun GlassBottomBar(
             .fillMaxWidth()
             .height(60.dp)
             .barShadow(RoundedCornerShape(28.dp))
-            .frostGlass(shape = RoundedCornerShape(28.dp), alpha = 0.86f, elevation = 16.dp)
+            .barSurface(RoundedCornerShape(28.dp))
             .padding(horizontal = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -201,7 +201,8 @@ fun LifeEventSheet(
                                 .height(FIELD_H)
                                 .clip(PillShape)
                                 .background(AppColors.SheetField)
-                                .padding(horizontal = ROW_PAD)
+                                .padding(horizontal = ROW_PAD),
+                            contentAlignment = Alignment.Center
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 SheetLeadingIcon(Icons.Filled.Edit)
@@ -477,7 +478,7 @@ fun LifeEventSheet(
                                     .shadow(
                                         elevation = 4.dp,
                                         shape = CircleShape,
-                                        ambientColor = DotShadowNear,
+                                        ambientColor = Color.Transparent,
                                         spotColor = DotShadowFar
                                     )
                                     .clip(CircleShape)
@@ -505,7 +506,7 @@ fun LifeEventSheet(
                                         .shadow(
                                             elevation = if (active) 8.dp else 3.dp,
                                             shape = CircleShape,
-                                            ambientColor = DotShadowNear,
+                                            ambientColor = Color.Transparent,
                                             spotColor = DotShadowFar
                                         )
                                         .clip(CircleShape)
