@@ -11,8 +11,9 @@
 .cxx
 local.properties
 
-# 构建产物（APK 体积大，不入库）
+# 构建产物（APK 体积大，不入库；仅放行 release/ 目录下的正式包）
 *.apk
+!/release/*.apk
 /app/release
 /app/debug
 

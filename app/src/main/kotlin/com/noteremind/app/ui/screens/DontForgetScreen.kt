@@ -189,7 +189,7 @@ fun DontForgetScreen(onEdit: (ReminderItem) -> Unit) {
 
 /**
  * 条目卡片（参考 列表22.png）：
- * - 左侧竖色块 = 所选颜色（同时是拖动把手）
+ * - v2.1：左侧颜色竖条已移除（原位仅保留不可见拖动热区，用于排序）
  * - 左侧三行：小图标 + 标题 / 日期 / 重复 + 剩余 + 下次
  * - 右侧两行天数徽标「已 N 天」：数字按 4 个字符占位、字号与纪念日一致
  */
@@ -234,11 +234,11 @@ private fun ReminderCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            // 竖色块：条目颜色（拖动把手）
+            // v2.1：去掉左侧颜色竖条；此处保留一条不可见的拖动热区，
+            // 长按/拖动仍可排序（视觉上不再有颜色条）
             Box(
                 modifier = Modifier
-                    .size(width = 5.dp, height = 46.dp)
-                    .background(entryColor, RoundedCornerShape(3.dp))
+                    .size(width = 6.dp, height = 46.dp)
                     .pointerInput(item.id) {
                         detectDragGestures(
                             onDragStart = { onDragStart() },
@@ -249,7 +249,7 @@ private fun ReminderCard(
                     }
             )
 
-            Spacer(Modifier.width(11.dp))
+            Spacer(Modifier.width(9.dp))
 
             // 文字区
             Column(modifier = Modifier.weight(1f)) {

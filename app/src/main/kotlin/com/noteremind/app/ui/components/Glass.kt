@@ -1,7 +1,6 @@
 package com.noteremind.app.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,13 +16,15 @@ import androidx.compose.ui.unit.dp
 import com.noteremind.app.ui.theme.AppColors
 
 /**
- * v2.0 阴影色板：
- * - 列表卡片：近层 黑 20% / 6dp + 远层 黑 10% / 14dp 的双层投影
- *   （v1.9 的单层 4% 在 #EFF1F3 底上几乎看不见，v2.0 应要求加重）
+ * v2.1 阴影色板：
+ * - 列表卡片：三层纯黑白灰投影（近 40% / 中 26% / 远 14%），
+ *   v2.0 的 20%+10% 双层在 #EFF1F3 底上仍偏淡，v2.1 再次整体加重；
+ *   同时去掉卡片四周的浅色描边（CardGlow），避免出现"浅色轮廓/发光"观感
  * - 加号 FAB：黑 20%/下移 4 + 黑 10%/下移 10 的双层投影（xiaozhi FAB 同款）
  */
-private val ListShadowNear = Color(0x33000000)
-private val ListShadowFar = Color(0x1A000000)
+private val ListShadowNear = Color(0x66000000)
+private val ListShadowMid = Color(0x42000000)
+private val ListShadowFar = Color(0x24000000)
 private val FabShadowNear = Color(0x33000000)
 private val FabShadowFar = Color(0x1A000000)
 
@@ -88,20 +89,31 @@ fun AppBackdrop(modifier: Modifier = Modifier) {
 }
 
 /**
- * 列表卡片（v2.0）：
- * 纯白卡片 + 1px 浅灰细边 + 「近深远浅」双层投影：
- * 近层 6dp / 黑 20% 贴卡片勾勒轮廓，远层 14dp / 黑 10% 向外扩散，
- * 在 #EFF1F3 页面底色上清晰可见。别忘了 / 纪念日 / 人生轨迹 / 设置共用。
+ * 列表卡片（v2.1）：
+ * 纯白卡片 + 三层纯色投影（无描边、无浅色辉光）：
+ *   近层 elevation / 黑 40%  → 贴卡片勾边
+ *   中层 elevation+6dp / 黑 26% → 过渡
+ *   远层 elevation+16dp / 黑 14% → 向外扩散
+ * 别忘了 / 纪念日 / 人生轨迹 / 设置四个页面共用。
+ * v2.1 变更：去掉 v2.0 的 1px 浅色描边（CardGlow #F2F3F5），
+ * 该描边在浅底上会呈现"浅色轮廓/发光"效果；阴影整体再加一档。
  */
 fun Modifier.creamCard(
     shape: Shape = RoundedCornerShape(20.dp),
-    elevation: Dp = 6.dp
+    elevation: Dp = 7.dp
 ): Modifier = this
     .shadow(
-        elevation = elevation + 8.dp,
+        elevation = elevation + 16.dp,
         shape = shape,
         ambientColor = ListShadowFar,
         spotColor = ListShadowFar,
+        clip = false
+    )
+    .shadow(
+        elevation = elevation + 6.dp,
+        shape = shape,
+        ambientColor = ListShadowMid,
+        spotColor = ListShadowMid,
         clip = false
     )
     .shadow(
@@ -113,7 +125,6 @@ fun Modifier.creamCard(
     )
     .clip(shape)
     .background(AppColors.CardCream)
-    .border(1.dp, AppColors.CardGlow, shape)
 
 /** v1.9：加号 FAB 的双层柔和投影（xiaozhi FAB 同款：近层深、远层淡） */
 fun Modifier.fabShadow(shape: Shape): Modifier = this

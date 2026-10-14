@@ -35,7 +35,7 @@ object AppColors {
 
     /** 列表卡片：纯白（列表22.png） */
     val CardCream = Color(0xFFFFFFFF)
-    /** 卡片柔和扩散阴影用色（不再有描边光晕，仅保留该常量备用） */
+    /** v2.1：列表卡片描边已移除（原先此色在浅底上呈现浅色轮廓/发光），此处仅保留常量备用 */
     val CardGlow = Color(0xFFF2F3F5)
     /** 主文字：近黑（列表22.png 标题 #181818） */
     val InkBrown = Color(0xFF181818)
