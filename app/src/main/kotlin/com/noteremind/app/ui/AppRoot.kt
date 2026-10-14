@@ -159,6 +159,7 @@ fun AppRoot() {
             initialRemind = src?.useSystemCalendar ?: false,
             initialIcon = src?.icon ?: "bell",
             initialColor = src?.color ?: "m1",
+            initialNote = src?.note ?: "",
             showRepeat = true,
             onDismiss = { editorKind = -1; editingReminder = null },
             onSave = { r: EditorResult ->
@@ -172,6 +173,7 @@ fun AppRoot() {
                     useSystemCalendar = r.remind,
                     icon = r.icon,
                     color = r.color,
+                    note = r.note,
                     order = src?.order ?: ((data.reminders.maxOfOrNull { it.order } ?: -1) + 1),
                     createdAt = src?.createdAt ?: System.currentTimeMillis()
                 )
@@ -196,6 +198,7 @@ fun AppRoot() {
             initialRemind = src?.remind ?: false,
             initialIcon = src?.icon ?: "cake",
             initialColor = src?.color ?: "m1",
+            initialNote = src?.note ?: "",
             showRepeat = false,
             showColor = true,
             dateHint = "日期",
@@ -208,6 +211,7 @@ fun AppRoot() {
                     lunar = r.lunar,
                     icon = r.icon,
                     color = r.color,
+                    note = r.note,
                     remind = r.remind,
                     createdAt = src?.createdAt ?: System.currentTimeMillis()
                 )
@@ -227,7 +231,7 @@ fun AppRoot() {
         LifeEventSheet(
             initial = src,
             onDismiss = { editorKind = -1; editingLife = null },
-            onSave = { text, millis, ownerId, colorKey ->
+            onSave = { text, millis, ownerId, colorKey, note ->
                 if (src == null) {
                     AppRepo.addLifeEvent(
                         LifeEvent(
@@ -236,12 +240,19 @@ fun AppRoot() {
                             dateMillis = millis,
                             ownerId = ownerId,
                             color = colorKey,
+                            note = note,
                             createdAt = System.currentTimeMillis()
                         )
                     )
                 } else {
                     AppRepo.updateLifeEvent(
-                        src.copy(text = text, dateMillis = millis, ownerId = ownerId, color = colorKey)
+                        src.copy(
+                            text = text,
+                            dateMillis = millis,
+                            ownerId = ownerId,
+                            color = colorKey,
+                            note = note
+                        )
                     )
                 }
                 editorKind = -1

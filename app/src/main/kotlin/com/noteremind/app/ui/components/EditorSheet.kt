@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEmotions
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Note
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Repeat
@@ -68,7 +69,9 @@ data class EditorResult(
     val repeatUnit: Int,
     val remind: Boolean,
     val icon: String,
-    val color: String
+    val color: String,
+    /** v2.0：备注（不在列表显示，仅编辑时可见） */
+    val note: String = ""
 )
 
 /** 面板内各行的左右内边距 */
@@ -77,8 +80,14 @@ private val ROW_PAD = 18.dp
 /** 图标列宽 + 间距，用于让分隔线与文字左对齐 */
 private val ICON_COL = 31.dp
 
-/** v1.6：行内上下间距比 v1.5（15dp）缩小 20%；v1.7 起行距保持统一（各行等距） */
-private val ROW_V_PAD = 12.dp
+/** v2.0：统一行高——所有行固定等高，比 v1.9 更紧凑且各行完全一致 */
+private val ROW_H = 48.dp
+
+/** 标题输入胶囊的高度（在 48dp 行内垂直居中） */
+private val FIELD_H = 40.dp
+
+/** v2.0：备注框高度（约两行文字，固定高度避免输入时页面跳动） */
+private val NOTE_H = 64.dp
 
 /** 「每 N [单位] 重复」里两个底色框的尺寸（v1.6：两者完全等大） */
 private val BOX_W = 52.dp
@@ -87,12 +96,12 @@ private val BOX_H = 32.dp
 private val PillShape = RoundedCornerShape(percent = 50)
 
 /**
- * 「别忘了」/「纪念日」通用输入界面（v1.6）：
+ * 「别忘了」/「纪念日」通用输入界面（v2.0）：
  * - 整页显示（不再只占屏幕下半部分），面板铺满屏幕
  * - 顶部「返回」「保存」白胶囊按钮，标题居中
  * - 各项为「前置简约矢量图标 + 文字」的平铺行，不用卡片底色区分
- * - 各行上下间距一致，并按可用高度平均分布
- * - 「每 N [单位] 重复」中数字框与单位框等宽等高，内容居中
+ * - v2.0：所有行统一 48dp 等高（更紧凑）；新增「备注框」（备注不在列表显示，
+ *   仅点击修改后可见）；颜色栏右侧同步显示当前所选颜色（圆形色块 + 名称）
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,6 +116,7 @@ fun EditorSheet(
     initialRemind: Boolean = false,
     initialIcon: String = "star",
     initialColor: String = "m1",
+    initialNote: String = "",
     showRepeat: Boolean = true,
     showColor: Boolean = true,
     dateHint: String = "日期",
@@ -124,6 +134,8 @@ fun EditorSheet(
     var remind by remember { mutableStateOf(initialRemind) }
     var icon by remember { mutableStateOf(initialIcon) }
     var colorKey by remember { mutableStateOf(initialColor) }
+    // v2.0：备注（不在列表显示）
+    var note by remember { mutableStateOf(initialNote) }
 
     var showCalendar by remember { mutableStateOf(false) }
     var showIconPicker by remember { mutableStateOf(false) }
@@ -137,7 +149,7 @@ fun EditorSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SheetPillButton("返回", onClick = { close() })
@@ -162,7 +174,8 @@ fun EditorSheet(
                                 repeatUnit = repeatUnit,
                                 remind = remind,
                                 icon = icon,
-                                color = colorKey
+                                color = colorKey,
+                                note = note.trim()
                             )
                         )
                         close()
@@ -170,44 +183,104 @@ fun EditorSheet(
                 })
             }
 
-            // 内容：紧贴页面上部依次排列，各行间距一致（下方留空，不再整页均分）
+            // 内容：紧贴页面上部依次排列，各行等高（下方留空，不再整页均分）
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding(),
                 verticalArrangement = Arrangement.Top
             ) {
-                // ① 事项：胶囊输入框（前置图标）
+                // ① 事项：胶囊输入框（前置图标），固定 48dp 行高
                 RowGroup {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = ROW_V_PAD)
-                            .gradientShadow(PillShape, base = 3.dp, layers = 3)
-                            .clip(PillShape)
-                            .background(AppColors.SheetField)
-                            .padding(horizontal = ROW_PAD, vertical = 13.dp)
+                            .height(ROW_H)
+                            .padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            SheetLeadingIcon(Icons.Filled.Edit)
-                            BasicTextField(
-                                value = text,
-                                onValueChange = { text = it },
-                                singleLine = true,
-                                textStyle = TextStyle(fontSize = 16.sp, color = AppColors.InkBrown),
-                                modifier = Modifier.fillMaxWidth(),
-                                decorationBox = { inner ->
-                                    if (text.isEmpty()) {
-                                        Text(placeholder, fontSize = 16.sp, color = AppColors.TextHint)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(FIELD_H)
+                                .gradientShadow(PillShape, base = 3.dp, layers = 3)
+                                .clip(PillShape)
+                                .background(AppColors.SheetField)
+                                .padding(horizontal = ROW_PAD)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                SheetLeadingIcon(Icons.Filled.Edit)
+                                BasicTextField(
+                                    value = text,
+                                    onValueChange = { text = it },
+                                    singleLine = true,
+                                    textStyle = TextStyle(fontSize = 16.sp, color = AppColors.InkBrown),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { inner ->
+                                        if (text.isEmpty()) {
+                                            Text(placeholder, fontSize = 16.sp, color = AppColors.TextHint)
+                                        }
+                                        inner()
                                     }
-                                    inner()
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
 
-                // ② 日期
+                // ② v2.0：备注框——备注不在列表显示，只点击修改后显示
+                RowGroup {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(NOTE_H)
+                                .gradientShadow(RoundedCornerShape(14.dp), base = 2.dp, layers = 2)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(AppColors.SheetField)
+                                .padding(horizontal = ROW_PAD, vertical = 10.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                Icon(
+                                    Icons.Filled.Note,
+                                    contentDescription = null,
+                                    tint = AppColors.TextSecondary,
+                                    modifier = Modifier
+                                        .size(19.dp)
+                                        .padding(top = 2.dp)
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                BasicTextField(
+                                    value = note,
+                                    onValueChange = { note = it },
+                                    textStyle = TextStyle(
+                                        fontSize = 14.sp,
+                                        lineHeight = 19.sp,
+                                        color = AppColors.InkBrown
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { inner ->
+                                        if (note.isEmpty()) {
+                                            Text(
+                                                "写点备注…（不在列表中显示）",
+                                                fontSize = 14.sp,
+                                                lineHeight = 19.sp,
+                                                color = AppColors.TextHint
+                                            )
+                                        }
+                                        inner()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // ③ 日期
                 RowGroup {
                     SheetRow(
                         icon = Icons.Filled.CalendarMonth,
@@ -226,7 +299,7 @@ fun EditorSheet(
                     }
                 }
 
-                // ③ 重复：每 [N] [单位] 重复（两个底色框等宽等高、内容居中）
+                // ④ 重复：每 [N] [单位] 重复（两个底色框等宽等高、内容居中）
                 if (showRepeat) {
                     RowGroup {
                         SheetRow(icon = Icons.Filled.Repeat, label = "重复") {
@@ -308,7 +381,7 @@ fun EditorSheet(
                     }
                 }
 
-                // ④ 设置提醒（v1.8：开关缩小到与文字等高，整行与其他行一致）
+                // ⑤ 设置提醒（开关缩小到与文字等高，整行与其他行一致）
                 RowGroup {
                     SheetRow(icon = Icons.Filled.NotificationsActive, label = "设置提醒") {
                         // 外层固定高度与文字行一致，点击整个开关区域都能切换
@@ -341,7 +414,7 @@ fun EditorSheet(
                     }
                 }
 
-                // ⑤ 图标（预览色随所选颜色变化，与列表一致）
+                // ⑥ 图标（预览色随所选颜色变化，与列表一致）
                 RowGroup(showDivider = showColor) {
                     SheetRow(
                         icon = Icons.Filled.EmojiEmotions,
@@ -351,10 +424,10 @@ fun EditorSheet(
                         val entryColor = MorandiPalette.byKey(colorKey)
                         Box(
                             modifier = Modifier
-                            .size(34.dp)
-                            .gradientShadow(RoundedCornerShape(10.dp), base = 2.dp, layers = 2)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(entryColor.copy(alpha = 0.16f)),
+                                .size(34.dp)
+                                .gradientShadow(RoundedCornerShape(10.dp), base = 2.dp, layers = 2)
+                                .clip(RoundedCornerShape(10.dp))
+                                .background(entryColor.copy(alpha = 0.16f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -371,18 +444,41 @@ fun EditorSheet(
                     }
                 }
 
-                // ⑥ 颜色
+                // ⑦ 颜色（v2.0：栏右侧同步显示当前所选颜色，选中即有反馈）
                 if (showColor) {
                     RowGroup(showDivider = false) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = ROW_PAD, vertical = ROW_V_PAD),
+                                    .height(ROW_H)
+                                    .padding(horizontal = ROW_PAD),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 SheetLeadingIcon(Icons.Filled.Palette)
                                 Text("颜色", fontSize = 16.sp, color = AppColors.InkBrown)
+                                Spacer(Modifier.weight(1f))
+                                // 右侧：当前所选颜色的圆形色块 + 名称，随点选实时同步
+                                val entry = MorandiPalette.all.find { it.key == colorKey }
+                                    ?: MorandiPalette.all[0]
+                                Box(
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .shadow(
+                                            elevation = 4.dp,
+                                            shape = CircleShape,
+                                            ambientColor = Color(0x33000000),
+                                            spotColor = Color(0x22000000)
+                                        )
+                                        .clip(CircleShape)
+                                        .background(entry.color)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    entry.name,
+                                    fontSize = 13.sp,
+                                    color = AppColors.InkBrownSoft
+                                )
                             }
                             Row(
                                 modifier = Modifier
@@ -483,7 +579,7 @@ private fun SheetDivider(indent: Boolean) {
     )
 }
 
-/** 无底色的平铺行：前置图标 + 文字 + 右侧内容 */
+/** 无底色的平铺行：前置图标 + 文字 + 右侧内容；v2.0 起固定 48dp 行高，各行完全一致 */
 @Composable
 private fun SheetRow(
     icon: ImageVector,
@@ -501,7 +597,8 @@ private fun SheetRow(
                 ) { onClick() }
             )
             .fillMaxWidth()
-            .padding(horizontal = ROW_PAD, vertical = ROW_V_PAD),
+            .height(ROW_H)
+            .padding(horizontal = ROW_PAD),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SheetLeadingIcon(icon)

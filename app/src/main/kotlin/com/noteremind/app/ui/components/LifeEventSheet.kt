@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Note
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
@@ -58,23 +59,31 @@ import java.time.LocalDate
 private val ROW_PAD = 18.dp
 private val ICON_COL = 31.dp
 
-/** v1.6：行内上下间距与输入界面统一（15dp 的 80%）；v1.7 起各行等距、内容贴上部 */
-private val ROW_V_PAD = 12.dp
+/** v2.0：统一行高——所有行固定等高，比 v1.9 更紧凑且各行完全一致 */
+private val ROW_H = 48.dp
+
+/** 标题输入胶囊的高度（在 48dp 行内垂直居中） */
+private val FIELD_H = 40.dp
+
+/** v2.0：备注框高度（约两行文字，固定高度避免输入时页面跳动） */
+private val NOTE_H = 64.dp
 
 private val PillShape = RoundedCornerShape(percent = 50)
 
 /**
- * 人生轨迹输入（v1.9）：
- * - 整页灰面板 + 白胶囊按钮 + 前置矢量图标平铺行
- * - 文字 + 日期 + 归属（是谁的人生轨迹）；新建归属时可设类型与锚点日期
- * - 归属的「选择」与重复单位一样，改为胶囊按钮浮层展开
- * - v1.9：新增「颜色」行，列表中「谁几岁 / 事项第几年」徽标底色取此处所选颜色
+ * 人生轨迹输入（v2.0）：
+ * - 整页灰面板 + 白胶囊按钮 + 前置矢量图标平铺行，所有行统一 48dp 等高
+ * - 新增「备注框」（备注不在列表显示，仅点击修改后可见）
+ * - 每一项编辑时都显示其起始日 / 生日：整行点击即可直接更改（取消「修改日期」按钮）；
+ *   归属为「我」时显示我的生日（点击可改全局生日）
+ * - v2.0：归属人的标签颜色保持统一——选中已有归属时颜色栏载入该归属的颜色，
+ *   保存后该归属名下所有条目的标签底色全部改为该颜色（修改一个则全部更改）
  */
 @Composable
 fun LifeEventSheet(
     initial: LifeEvent?,
     onDismiss: () -> Unit,
-    onSave: (String, Long, String, String) -> Unit
+    onSave: (String, Long, String, String, String) -> Unit
 ) {
     val today = LocalDate.now()
     val data by AppRepo.data.collectAsState()
@@ -82,6 +91,8 @@ fun LifeEventSheet(
 
     var text by remember { mutableStateOf(initial?.text ?: "") }
     var millis by remember { mutableStateOf(initial?.dateMillis ?: DateUtils.dateToMillis(today)) }
+    // v2.0：备注（不在列表显示）
+    var note by remember { mutableStateOf(initial?.note ?: "") }
     var showCalendar by remember { mutableStateOf(false) }
     var calendarForAnchor by remember { mutableStateOf(false) }
 
@@ -92,10 +103,14 @@ fun LifeEventSheet(
     var anchorMillis by remember {
         mutableStateOf(initialOwner?.anchorMillis ?: (initial?.dateMillis ?: DateUtils.dateToMillis(today)))
     }
-    // v1.8：正在修改生日/起始日的已有归属（null = 新建归属的锚点日期）
+    // 正在修改生日/起始日的已有归属（null = 新建归属的锚点日期）
     var editingOwnerAnchor by remember { mutableStateOf<TrackOwner?>(null) }
-    // v1.9：条目颜色（列表年龄徽标底色）
-    var colorKey by remember { mutableStateOf(initial?.color ?: "m1") }
+    // v2.0：正在修改「我的生日」（全局）
+    var editingMyBirthday by remember { mutableStateOf(false) }
+    // v2.0：条目颜色；已有归属优先用该归属的统一颜色（列表中标签底色即此色）
+    var colorKey by remember {
+        mutableStateOf(initialOwner?.color ?: (initial?.color ?: "m1"))
+    }
 
     val canSave = text.isNotBlank()
     val trimmedName = ownerName.trim()
@@ -119,7 +134,7 @@ fun LifeEventSheet(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SheetPillButton("返回", onClick = { close() })
@@ -145,59 +160,136 @@ fun LifeEventSheet(
                                         id = id,
                                         name = trimmedName,
                                         isPerson = isPerson,
-                                        anchorMillis = anchorMillis
+                                        anchorMillis = anchorMillis,
+                                        color = colorKey
                                     )
                                 )
                                 id
                             }
+                            if (exist != null) {
+                                // 已有归属：颜色以本次编辑为准，保持归属人标签颜色统一
+                                AppRepo.upsertOwner(exist.copy(color = colorKey))
+                            }
+                            // 该归属名下所有条目标签底色统一改为当前颜色（修改一个则全部更改）
+                            AppRepo.recolorLifeEventsByOwner(ownerId, colorKey)
                         }
-                        onSave(text.trim(), millis, ownerId, colorKey)
+                        onSave(text.trim(), millis, ownerId, colorKey, note.trim())
                         close()
                     }
                 })
             }
 
-            // 内容：紧贴页面上部依次排列，各行间距一致（下方留空，不再整页均分）
+            // 内容：紧贴页面上部依次排列，各行等高（下方留空，不再整页均分）
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding(),
                 verticalArrangement = Arrangement.Top
             ) {
-                // ① 这一刻：胶囊输入框
+                // ① 这一刻：胶囊输入框，固定 48dp 行高
                 RowGroup {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = ROW_V_PAD)
-                            .clip(PillShape)
-                            .background(AppColors.SheetField)
-                            .padding(horizontal = ROW_PAD, vertical = 13.dp)
+                            .height(ROW_H)
+                            .padding(horizontal = 14.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            SheetLeadingIcon(Icons.Filled.Edit)
-                            BasicTextField(
-                                value = text,
-                                onValueChange = { text = it },
-                                textStyle = TextStyle(fontSize = 16.sp, color = AppColors.InkBrown, lineHeight = 21.sp),
-                                modifier = Modifier.fillMaxWidth(),
-                                decorationBox = { inner ->
-                                    if (text.isEmpty()) {
-                                        Text("输入人生中的这一刻…", fontSize = 16.sp, color = AppColors.TextHint)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(FIELD_H)
+                                .clip(PillShape)
+                                .background(AppColors.SheetField)
+                                .padding(horizontal = ROW_PAD)
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                SheetLeadingIcon(Icons.Filled.Edit)
+                                BasicTextField(
+                                    value = text,
+                                    onValueChange = { text = it },
+                                    textStyle = TextStyle(
+                                        fontSize = 16.sp,
+                                        color = AppColors.InkBrown,
+                                        lineHeight = 21.sp
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { inner ->
+                                        if (text.isEmpty()) {
+                                            Text(
+                                                "输入人生中的这一刻…",
+                                                fontSize = 16.sp,
+                                                color = AppColors.TextHint
+                                            )
+                                        }
+                                        inner()
                                     }
-                                    inner()
-                                }
-                            )
+                                )
+                            }
                         }
                     }
                 }
 
-                // ② 日期
+                // ② v2.0：备注框——备注不在列表显示，只点击修改后显示
+                RowGroup {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(NOTE_H)
+                                .gradientShadow(RoundedCornerShape(14.dp), base = 2.dp, layers = 2)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(AppColors.SheetField)
+                                .padding(horizontal = ROW_PAD, vertical = 10.dp)
+                        ) {
+                            Row(verticalAlignment = Alignment.Top) {
+                                Icon(
+                                    Icons.Filled.Note,
+                                    contentDescription = null,
+                                    tint = AppColors.TextSecondary,
+                                    modifier = Modifier
+                                        .size(19.dp)
+                                        .padding(top = 2.dp)
+                                )
+                                Spacer(Modifier.width(12.dp))
+                                BasicTextField(
+                                    value = note,
+                                    onValueChange = { note = it },
+                                    textStyle = TextStyle(
+                                        fontSize = 14.sp,
+                                        lineHeight = 19.sp,
+                                        color = AppColors.InkBrown
+                                    ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    decorationBox = { inner ->
+                                        if (note.isEmpty()) {
+                                            Text(
+                                                "写点备注…（不在列表中显示）",
+                                                fontSize = 14.sp,
+                                                lineHeight = 19.sp,
+                                                color = AppColors.TextHint
+                                            )
+                                        }
+                                        inner()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // ③ 日期
                 RowGroup {
                     SheetRow(
                         icon = Icons.Filled.CalendarMonth,
                         label = "日期",
                         onClick = {
+                            editingMyBirthday = false
+                            editingOwnerAnchor = null
                             calendarForAnchor = false
                             showCalendar = true
                         }
@@ -213,8 +305,8 @@ fun LifeEventSheet(
                     }
                 }
 
-                // ③ 归属
-                RowGroup(showDivider = needOwnerSetup || matchedOwner != null) {
+                // ④ 归属
+                RowGroup {
                     SheetRow(icon = Icons.Filled.AccountCircle, label = "归属") {
                         Box(modifier = Modifier.weight(1f)) {
                             BasicTextField(
@@ -222,7 +314,10 @@ fun LifeEventSheet(
                                 onValueChange = {
                                     ownerName = it
                                     matchedOwner = owners.find { o -> o.name == it.trim() }
-                                    matchedOwner?.let { o -> isPerson = o.isPerson }
+                                    matchedOwner?.let { o ->
+                                        isPerson = o.isPerson
+                                        colorKey = o.color
+                                    }
                                 },
                                 singleLine = true,
                                 textStyle = TextStyle(fontSize = 14.sp, color = AppColors.InkBrown),
@@ -258,6 +353,8 @@ fun LifeEventSheet(
                                     matchedOwner = o
                                     isPerson = o.isPerson
                                     anchorMillis = o.anchorMillis
+                                    // v2.0：选中已有归属 → 颜色栏载入该归属的统一颜色
+                                    colorKey = o.color
                                 }
                             }
                         ) {
@@ -276,67 +373,122 @@ fun LifeEventSheet(
                     }
                 }
 
-                // ④ 新建归属：类型 + 锚点日期
-                if (needOwnerSetup) {
-                    RowGroup {
-                        SheetRow(icon = Icons.Filled.Person, label = "类型") {
-                            OwnerTypeToggle(isPerson) { isPerson = it }
+                // ⑤ 起始日 / 生日：每一项编辑时都显示，整行点击即可直接更改
+                //    （v2.0 取消「修改日期」按钮）
+                when {
+                    // 新建归属：类型 + 锚点日期
+                    needOwnerSetup -> {
+                        RowGroup {
+                            SheetRow(icon = Icons.Filled.Person, label = "类型") {
+                                OwnerTypeToggle(isPerson) { isPerson = it }
+                            }
+                        }
+                        RowGroup(showDivider = false) {
+                            SheetRow(
+                                icon = Icons.Filled.CalendarMonth,
+                                label = if (isPerson) "生日" else "起始",
+                                onClick = {
+                                    editingMyBirthday = false
+                                    editingOwnerAnchor = null
+                                    calendarForAnchor = true
+                                    showCalendar = true
+                                }
+                            ) {
+                                Text(
+                                    DateUtils.formatCN(DateUtils.millisToDate(anchorMillis)),
+                                    fontSize = 14.sp,
+                                    color = AppColors.Accent
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                SheetChevron()
+                            }
                         }
                     }
-                    RowGroup(showDivider = false) {
-                        SheetRow(
-                            icon = Icons.Filled.CalendarMonth,
-                            label = if (isPerson) "生日" else "起始"
-                        ) {
-                            Text(
-                                DateUtils.formatCN(DateUtils.millisToDate(anchorMillis)),
-                                fontSize = 14.sp,
-                                color = AppColors.Accent
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            // v1.8：修改日期按钮，弹出日期选择界面
-                            SheetPillButton("修改日期", compact = true, onClick = {
-                                editingOwnerAnchor = null
-                                calendarForAnchor = true
-                                showCalendar = true
-                            })
+                    // 已有归属：显示其生日/起始日，点击整行直接修改
+                    matchedOwner != null -> {
+                        RowGroup(showDivider = false) {
+                            val o = matchedOwner!!
+                            SheetRow(
+                                icon = Icons.Filled.CalendarMonth,
+                                label = "${o.name}的${if (o.isPerson) "生日" else "起始"}",
+                                onClick = {
+                                    editingMyBirthday = false
+                                    editingOwnerAnchor = o
+                                    calendarForAnchor = true
+                                    showCalendar = true
+                                }
+                            ) {
+                                Text(
+                                    DateUtils.formatCN(DateUtils.millisToDate(o.anchorMillis)),
+                                    fontSize = 14.sp,
+                                    color = AppColors.Accent
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                SheetChevron()
+                            }
                         }
                     }
-                } else if (matchedOwner != null) {
-                    // 已有归属（v1.8）：显示其生日/起始日，可用「修改日期」按钮直接修改
-                    RowGroup(showDivider = false) {
-                        val o = matchedOwner!!
-                        SheetRow(
-                            icon = Icons.Filled.CalendarMonth,
-                            label = "${o.name}的${if (o.isPerson) "生日" else "起始"}"
-                        ) {
-                            Text(
-                                DateUtils.formatCN(DateUtils.millisToDate(o.anchorMillis)),
-                                fontSize = 14.sp,
-                                color = AppColors.Accent
-                            )
-                            Spacer(Modifier.width(10.dp))
-                            SheetPillButton("修改日期", compact = true, onClick = {
-                                editingOwnerAnchor = o
-                                calendarForAnchor = true
-                                showCalendar = true
-                            })
+                    // 归属为「我」：显示我的生日，点击可直接更改（全局）
+                    else -> {
+                        RowGroup(showDivider = false) {
+                            SheetRow(
+                                icon = Icons.Filled.CalendarMonth,
+                                label = "我的生日",
+                                onClick = {
+                                    editingOwnerAnchor = null
+                                    editingMyBirthday = true
+                                    calendarForAnchor = true
+                                    showCalendar = true
+                                }
+                            ) {
+                                val b = data.birthdayMillis
+                                Text(
+                                    if (b != null) DateUtils.formatCN(DateUtils.millisToDate(b)) else "未设置",
+                                    fontSize = 14.sp,
+                                    color = if (b != null) AppColors.Accent else AppColors.TextHint
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                SheetChevron()
+                            }
                         }
                     }
                 }
 
-                // ⑤ 颜色（v1.9：与「别忘了 / 纪念日」一致；
-                //    列表中「谁几岁 / 事项第几年」徽标的底色即此处所选颜色）
+                // ⑥ 颜色（v2.0：栏右侧同步显示当前所选颜色；列表中「谁几岁 /
+                //    事项第几年」徽标的底色即此处所选颜色，同一归属下保持统一）
                 RowGroup(showDivider = false) {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = ROW_PAD, vertical = ROW_V_PAD),
+                                .height(ROW_H)
+                                .padding(horizontal = ROW_PAD),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             SheetLeadingIcon(Icons.Filled.Palette)
                             Text("颜色", fontSize = 16.sp, color = AppColors.InkBrown)
+                            Spacer(Modifier.weight(1f))
+                            // 右侧：当前所选颜色的圆形色块 + 名称，随点选实时同步
+                            val entry = MorandiPalette.all.find { it.key == colorKey }
+                                ?: MorandiPalette.all[0]
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .shadow(
+                                        elevation = 4.dp,
+                                        shape = CircleShape,
+                                        ambientColor = Color(0x33000000),
+                                        spotColor = Color(0x22000000)
+                                    )
+                                    .clip(CircleShape)
+                                    .background(entry.color)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                entry.name,
+                                fontSize = 13.sp,
+                                color = AppColors.InkBrownSoft
+                            )
                         }
                         Row(
                             modifier = Modifier
@@ -373,20 +525,32 @@ fun LifeEventSheet(
 
     if (showCalendar) {
         CalendarSheet(
-            initialMillis = if (calendarForAnchor) anchorMillis else millis,
+            initialMillis = when {
+                !calendarForAnchor -> millis
+                editingMyBirthday -> data.birthdayMillis
+                editingOwnerAnchor != null -> editingOwnerAnchor!!.anchorMillis
+                else -> anchorMillis
+            },
             initialLunar = false,
             onDismiss = { showCalendar = false },
             onConfirm = { m, _ ->
                 if (calendarForAnchor) {
                     val target = editingOwnerAnchor
-                    if (target != null) {
-                        // v1.8：修改已有归属的生日/起始日，立即保存
-                        val updated = target.copy(anchorMillis = m)
-                        AppRepo.upsertOwner(updated)
-                        matchedOwner = updated
-                        editingOwnerAnchor = null
-                    } else {
-                        anchorMillis = m
+                    when {
+                        // 修改「我的生日」（全局）
+                        editingMyBirthday -> {
+                            AppRepo.setBirthday(m, false)
+                            editingMyBirthday = false
+                        }
+                        // 修改已有归属的生日/起始日，立即保存
+                        target != null -> {
+                            val updated = target.copy(anchorMillis = m)
+                            AppRepo.upsertOwner(updated)
+                            matchedOwner = updated
+                            editingOwnerAnchor = null
+                        }
+                        // 新建归属的锚点日期
+                        else -> anchorMillis = m
                     }
                 } else {
                     millis = m
@@ -428,6 +592,7 @@ private fun SheetChevron() {
     )
 }
 
+/** 细分隔线；indent = true 时与文字左边缘对齐 */
 @Composable
 private fun SheetDivider(indent: Boolean) {
     Box(
@@ -439,6 +604,7 @@ private fun SheetDivider(indent: Boolean) {
     )
 }
 
+/** 无底色的平铺行：前置图标 + 文字 + 右侧内容；v2.0 起固定 48dp 行高，各行完全一致 */
 @Composable
 private fun SheetRow(
     icon: ImageVector,
@@ -456,7 +622,8 @@ private fun SheetRow(
                 ) { onClick() }
             )
             .fillMaxWidth()
-            .padding(horizontal = ROW_PAD, vertical = ROW_V_PAD),
+            .height(ROW_H)
+            .padding(horizontal = ROW_PAD),
         verticalAlignment = Alignment.CenterVertically
     ) {
         SheetLeadingIcon(icon)

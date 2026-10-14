@@ -97,6 +97,21 @@ object AppRepo {
         update { d -> d.copy(lifeEvents = d.lifeEvents.filterNot { it.id == id }) }
     }
 
+    /**
+     * v2.0：把某归属名下所有轨迹条目统一成同一个颜色（归属人标签颜色保持统一，
+     * 修改其中一个则全部更改）。「我」（ownerId 为空串）不参与统一，保持逐条目配色。
+     */
+    fun recolorLifeEventsByOwner(ownerId: String, colorKey: String) {
+        if (ownerId.isEmpty()) return
+        update { d ->
+            d.copy(
+                lifeEvents = d.lifeEvents.map {
+                    if (it.ownerId == ownerId) it.copy(color = colorKey) else it
+                }
+            )
+        }
+    }
+
     // ---------- 纪念日 ----------
 
     fun upsertAnniversary(item: Anniversary) {

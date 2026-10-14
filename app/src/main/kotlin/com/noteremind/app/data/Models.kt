@@ -21,6 +21,8 @@ data class ReminderItem(
     val icon: String = "star",
     /** 莫兰迪色 key，见 MorandiPalette */
     val color: String = "m1",
+    /** v2.0：备注（不在列表显示，仅编辑时可见） */
+    val note: String = "",
     val order: Int = 0,
     val createdAt: Long = 0L
 )
@@ -35,7 +37,9 @@ data class TrackOwner(
     /** true = 人（显示 N 岁）；false = 事件（显示 第 N 年） */
     val isPerson: Boolean = true,
     /** 锚点日期：人的生日 / 事件的起始日 */
-    val anchorMillis: Long
+    val anchorMillis: Long,
+    /** v2.0：该归属的统一颜色 key（其名下所有轨迹条目的标签底色） */
+    val color: String = "m1"
 )
 
 /** 「人生轨迹」事件 */
@@ -48,6 +52,8 @@ data class LifeEvent(
     val ownerId: String = "",
     /** v1.9：条目颜色 key，见 MorandiPalette（年龄/第几年徽标底色取此色） */
     val color: String = "m1",
+    /** v2.0：备注（不在列表显示，仅编辑时可见） */
+    val note: String = "",
     val createdAt: Long = 0L
 )
 
@@ -61,6 +67,8 @@ data class Anniversary(
     val icon: String = "cake",
     /** v1.6：条目颜色 key，见 MorandiPalette（图标随之着色） */
     val color: String = "m1",
+    /** v2.0：备注（不在列表显示，仅编辑时可见） */
+    val note: String = "",
     val remind: Boolean = false,
     val createdAt: Long = 0L
 )

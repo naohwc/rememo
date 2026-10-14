@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -112,6 +113,16 @@ fun LifeTrackScreen(onEdit: (LifeEvent) -> Unit) {
                 "${owner.name}第${years}年"
             }
         }
+    }
+
+    /**
+     * v2.0：标签底色——归属人名下所有条目统一用该归属的颜色（修改一个则全部更改）；
+     * 「我」（无归属）沿用条目自身颜色。
+     */
+    fun chipColorFor(event: LifeEvent): Color {
+        if (event.ownerId.isEmpty()) return MorandiPalette.byKey(event.color)
+        val owner = data.owners.find { it.id == event.ownerId }
+        return MorandiPalette.byKey(owner?.color ?: event.color)
     }
 
     Column(
@@ -199,6 +210,7 @@ fun LifeTrackScreen(onEdit: (LifeEvent) -> Unit) {
                             event = event,
                             date = date,
                             age = age,
+                            chipColor = chipColorFor(event),
                             showLine = index != events.lastIndex,
                             selected = selectedId == event.id,
                             onClick = {
@@ -226,6 +238,7 @@ private fun TimelineItem(
     event: LifeEvent,
     date: LocalDate,
     age: String?,
+    chipColor: Color,
     showLine: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
@@ -300,8 +313,8 @@ private fun TimelineItem(
                     )
                     if (age != null) {
                         Spacer(Modifier.width(8.dp))
-                        // v1.9：底色 = 输入框中所选颜色；文字按底色明暗自动切换深/白
-                        val chipColor = MorandiPalette.byKey(event.color)
+                        // v2.0：底色 = 归属人的统一颜色（由调用方按归属计算）；
+                        // 文字按底色明暗自动切换深/白
                         Box(
                             modifier = Modifier
                                 .gradientShadow(RoundedCornerShape(8.dp), base = 2.dp, layers = 2)

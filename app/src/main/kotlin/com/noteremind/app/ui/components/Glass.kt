@@ -17,11 +17,13 @@ import androidx.compose.ui.unit.dp
 import com.noteremind.app.ui.theme.AppColors
 
 /**
- * v1.9 阴影色板（参考 xiaozhi-android-client 主页元素）：
- * - 列表卡片：黑 4%、模糊 4、下移 2（ConversationTile 同款单层柔和投影）
+ * v2.0 阴影色板：
+ * - 列表卡片：近层 黑 20% / 6dp + 远层 黑 10% / 14dp 的双层投影
+ *   （v1.9 的单层 4% 在 #EFF1F3 底上几乎看不见，v2.0 应要求加重）
  * - 加号 FAB：黑 20%/下移 4 + 黑 10%/下移 10 的双层投影（xiaozhi FAB 同款）
  */
-private val ListShadow = Color(0x0A000000)
+private val ListShadowNear = Color(0x33000000)
+private val ListShadowFar = Color(0x1A000000)
 private val FabShadowNear = Color(0x33000000)
 private val FabShadowFar = Color(0x1A000000)
 
@@ -86,20 +88,27 @@ fun AppBackdrop(modifier: Modifier = Modifier) {
 }
 
 /**
- * 列表卡片（v1.9）：
- * 阴影改为 xiaozhi-android-client 主页列表项（ConversationTile）同款：
- * 纯白卡片 + 1px 浅灰细边 + 单层柔和下投影（黑 4%、模糊 4、下移 2），
- * 替换此前的多层重阴影；别忘了 / 纪念日 / 人生轨迹三个列表共用。
+ * 列表卡片（v2.0）：
+ * 纯白卡片 + 1px 浅灰细边 + 「近深远浅」双层投影：
+ * 近层 6dp / 黑 20% 贴卡片勾勒轮廓，远层 14dp / 黑 10% 向外扩散，
+ * 在 #EFF1F3 页面底色上清晰可见。别忘了 / 纪念日 / 人生轨迹 / 设置共用。
  */
 fun Modifier.creamCard(
     shape: Shape = RoundedCornerShape(20.dp),
-    elevation: Dp = 2.dp
+    elevation: Dp = 6.dp
 ): Modifier = this
+    .shadow(
+        elevation = elevation + 8.dp,
+        shape = shape,
+        ambientColor = ListShadowFar,
+        spotColor = ListShadowFar,
+        clip = false
+    )
     .shadow(
         elevation = elevation,
         shape = shape,
-        ambientColor = ListShadow,
-        spotColor = ListShadow,
+        ambientColor = ListShadowNear,
+        spotColor = ListShadowNear,
         clip = false
     )
     .clip(shape)
