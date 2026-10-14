@@ -151,3 +151,31 @@ fun Modifier.fabShadow(shape: Shape): Modifier = this
         spotColor = FabShadowNear,
         clip = false
     )
+
+/**
+ * 底部导航栏投影（v2.3 新增）：
+ * 三层纯黑投影，扩散距离比列表卡片更大——胶囊导航浮在滚动内容之上，
+ * 需要更宽更深的投影才能拉开层次。与 frostGlass 内部的渐变阴影叠加使用。
+ */
+fun Modifier.barShadow(shape: Shape): Modifier = this
+    .shadow(
+        elevation = 26.dp,
+        shape = shape,
+        ambientColor = ListShadowFar,
+        spotColor = ListShadowFar,
+        clip = false
+    )
+    .shadow(
+        elevation = 15.dp,
+        shape = shape,
+        ambientColor = ListShadowMid,
+        spotColor = ListShadowMid,
+        clip = false
+    )
+    .shadow(
+        elevation = 8.dp,
+        shape = shape,
+        ambientColor = ListShadowNear,
+        spotColor = ListShadowNear,
+        clip = false
+    )
